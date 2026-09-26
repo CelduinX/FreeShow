@@ -1,0 +1,78 @@
+name: Sync official stable release
+
+on:
+    schedule:
+        - cron: '17 4 * * *'
+    workflow_dispatch:
+
+permissions:
+    contents: write
+
+concurrency:
+    group: sync-official-release
+    cancel-in-progress: false
+
+jobs:
+    sync:
+        if: github.repository == 'CelduinX/FreeShow' && github.ref == 'refs/heads/personal'
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check out personal branch
+              uses: actions/checkout@v5
+              with:
+                  ref: personal
+                  fetch-depth: 0
+
+            - name: Find and merge latest official stable release
+              id: release
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  latest_tag="$(gh api repos/ChurchApps/FreeShow/releases/latest --jq '.tag_name')"
+                  if [[ ! "$latest_tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                      echo "Unexpected release tag: $latest_tag" >&2
+                      exit 1
+                  fi
+
+                  git remote add upstream https://github.com/ChurchApps/FreeShow.git
+                  git fetch upstream "refs/tags/${latest_tag}:refs/tags/${latest_tag}"
+                  if git merge-base --is-ancestor "$latest_tag" HEAD; then
+                      echo "Already contains official release $latest_tag"
+                      echo 'updated=false' >> "$GITHUB_OUTPUT"
+                      exit 0
+                  fi
+
+                  git config user.name 'github-actions[bot]'
+                  git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+                  if ! git merge --no-ff --no-edit "$latest_tag"; then
+                      echo "Merge conflict with $latest_tag. Resolve it on the personal branch and rerun this workflow." >&2
+                      git status --short
+                      exit 1
+                  fi
+                  echo 'updated=true' >> "$GITHUB_OUTPUT"
+
+            - name: Install Node.js
+              if: steps.release.outputs.updated == 'true'
+              uses: actions/setup-node@v5
+              with:
+                  node-version: 22
+                  cache: npm
+
+            - name: Install build libraries
+              if: steps.release.outputs.updated == 'true'
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y libfontconfig1-dev uuid-dev libltc-dev --fix-missing
+
+            - name: Install dependencies and build
+              if: steps.release.outputs.updated == 'true'
+              run: |
+                  npm ci
+                  npm run build
+                  git diff --exit-code
+
+            - name: Publish merged release
+              if: steps.release.outputs.updated == 'true'
+              run: git push origin HEAD:personal
