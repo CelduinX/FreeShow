@@ -1,4 +1,5 @@
 import type { Display } from "electron"
+import type { SpotifyRequest, SpotifyResult } from "../Spotify"
 import type { EncoderDetection } from "../../electron/streaming/encoderDetection"
 import type { ExifData } from "exif"
 import type { Stats } from "fs"
@@ -171,6 +172,7 @@ export enum Main {
     // Spotify
     SPOTIFY_GET_STATE = "SPOTIFY_GET_STATE",
     SPOTIFY_COMMAND = "SPOTIFY_COMMAND",
+    SPOTIFY_LIBRARY = "SPOTIFY_LIBRARY",
     // FFmpeg Download
     FFMPEG_CHECK = "FFMPEG_CHECK",
     FFMPEG_DOWNLOAD = "FFMPEG_DOWNLOAD",
@@ -274,6 +276,7 @@ export interface MainSendPayloads {
     [Main.TIMECODE_AUDIO_DATA]: { mode: TimecodeMode; buffer: Uint8Array }
     // Spotify
     [Main.SPOTIFY_GET_STATE]: undefined
+    [Main.SPOTIFY_LIBRARY]: SpotifyRequest
     [Main.SPOTIFY_COMMAND]: { command: "playpause" | "next" | "prev" | "seek" | "setVolume" | "pause"; value?: number }
     // FFmpeg
     [Main.FFMPEG_CHECK]: undefined
@@ -377,6 +380,7 @@ export interface MainReturnPayloads {
     [Main.TIMECODE_STATUS]: "play" | "pause" | "stop" | void
     // Spotify
     [Main.SPOTIFY_GET_STATE]: Promise<SpotifyState | null>
+    [Main.SPOTIFY_LIBRARY]: Promise<SpotifyResult>
     [Main.SPOTIFY_COMMAND]: Promise<boolean>
     // FFmpeg
     [Main.FFMPEG_CHECK]: Promise<{ installed: boolean; path?: string }>

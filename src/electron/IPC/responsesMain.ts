@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/electron/main"
+import { spotifyLibrary } from "../utils/spotifyPlaylists"
 import type { BrowserWindow, DesktopCapturerSource } from "electron"
 import { app, desktopCapturer, screen, shell, systemPreferences } from "electron"
 import os from "os"
@@ -240,6 +241,7 @@ export const mainResponses: MainResponses = {
     [Main.TIMECODE_AUDIO_DATA]: (data) => processAudioData(data),
     // Spotify
     [Main.SPOTIFY_GET_STATE]: () => getSpotifyState(),
+    [Main.SPOTIFY_LIBRARY]: (data) => spotifyLibrary(data),
     [Main.SPOTIFY_COMMAND]: async (data) => {
         await executeSpotifyCommand(data.command, data.value)
         return true

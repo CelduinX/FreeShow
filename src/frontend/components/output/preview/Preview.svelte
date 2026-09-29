@@ -27,6 +27,7 @@
     import MultiOutputs from "./MultiOutputs.svelte"
     import PreviewOutputs from "./PreviewOutputs.svelte"
     import SpotifyController from "./SpotifyController.svelte"
+    import SpotifyPlaylists from "./SpotifyPlaylists.svelte"
 
     $: allActiveOutputs = getActiveOutputs($outputs, true, true, true)
     $: outputId = allActiveOutputs[0]
@@ -299,6 +300,7 @@
         </div>
 
         <SpotifyController />
+        <SpotifyPlaylists />
     {/if}
 </div>
 
